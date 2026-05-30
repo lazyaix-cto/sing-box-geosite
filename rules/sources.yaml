@@ -1,8 +1,41 @@
 # Source definitions — the declarative replacement for the original links.txt.
 # Each entry produces rule/<category>.json and rule/<category>.srs, merging all
-# listed URLs. P0 ships one category end-to-end; P1 restores the full set.
+# listed URLs. format is omitted (= auto): the generator sniffs the format and
+# logs its choice. All current upstreams are QuantumultX .list files.
 sources:
+  - category: Direct
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/Direct/Direct.list]
+  - category: Advertising
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/Advertising/Advertising.list]
+  - category: Bahamut
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/Bahamut/Bahamut.list]
+  - category: Emby
+    urls: [https://raw.githubusercontent.com/7ongOrz/QuantumultX/main/Rule/Emby.list]
+  - category: GlobalMedia
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/GlobalMedia/GlobalMedia.list]
+  - category: BiliBili
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/BiliBili/BiliBili.list]
+  - category: Apple
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/Apple/Apple.list]
+  - category: Game
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/Game/Game.list]
+  - category: Microsoft
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/Microsoft/Microsoft.list]
   - category: OpenAI
-    format: quantumultx
-    urls:
-      - https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/OpenAI/OpenAI.list
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/OpenAI/OpenAI.list]
+  - category: Gemini
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/Gemini/Gemini.list]
+  - category: Claude
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/Claude/Claude.list]
+  - category: Anthropic
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/Anthropic/Anthropic.list]
+  - category: Oracle
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/Oracle/Oracle.list]
+  - category: Telegram
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/Telegram/Telegram.list]
+  - category: Global
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/Global/Global.list]
+  - category: China
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/China/China.list]
+  - category: ChinaDNS
+    urls: [https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/ChinaDNS/ChinaDNS.list]

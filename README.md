@@ -13,13 +13,18 @@
   绝不悄悄丢弃。
 - **产物可校验** —— 每个 `.srs` 编译后立即用 `srs.Read` 回读校验，确保真实 sing-box 可加载。
 
-## 状态：P0（骨架已打通）
+## 状态：P1（对齐并超越原版）
 
-端到端跑通：抓取 → 解析（QuantumultX）→ 归一化 → 输出 `.json` + `.srs` → 回读校验。
+端到端跑通全部 18 个分类：并发抓取 → 自动嗅探格式 → 解析 → 归一化 → 输出
+`.json` + `.srs` → 回读校验。逐源报错不中断其余分类。
 
-- 已支持格式：`quantumultx`
-- 路线图：P1 多格式 + 并发抓取 + 全量分类；P2 去重/收敛/CIDR 合并/override；
-  P3 AdGuard/hosts/IP-ASN + 多版本（v1/v2/v3）输出。
+- 已支持格式：`quantumultx`（QuantumultX / Clash classical）、`clash`（rule-provider
+  payload）、`singbox`（原生 rule-set 源格式）、`domainlist`（纯域名 / v2fly dlc 前缀）；
+  `format` 留空即按内容 + URL 后缀自动嗅探。
+- 并发抓取（`-concurrency`，默认 8），单源失败仅记 `[FAIL]`，不影响其余。
+- 无法表示的类型（`USER-AGENT`/`IP-ASN`/`HOST-WILDCARD` 等）计数并打印，绝不静默丢弃。
+- 路线图：P2 去重/后缀收敛/CIDR 合并/override 定制 + 单元测试；
+  P3 AdGuard/hosts/IP-ASN 解析器 + 多版本（v1/v2/v3）输出 + CI 上线。
 
 ## 使用
 
