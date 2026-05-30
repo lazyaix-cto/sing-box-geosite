@@ -4,7 +4,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/lazyaix/sing-box-geosite/internal/model"
+	"github.com/lazyaix-cto/sing-box-geosite/internal/model"
 )
 
 func equalSet(a, b []string) bool {

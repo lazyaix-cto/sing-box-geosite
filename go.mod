@@ -1,4 +1,4 @@
-module github.com/lazyaix/sing-box-geosite
+module github.com/lazyaix-cto/sing-box-geosite
 
 go 1.26.2
 

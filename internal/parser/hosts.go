@@ -6,7 +6,7 @@ import (
 	"net/netip"
 	"strings"
 
-	"github.com/lazyaix/sing-box-geosite/internal/model"
+	"github.com/lazyaix-cto/sing-box-geosite/internal/model"
 )
 
 func init() { register(hosts{}) }

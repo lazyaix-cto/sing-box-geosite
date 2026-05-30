@@ -3,7 +3,7 @@ package parser
 import (
 	"encoding/json"
 
-	"github.com/lazyaix/sing-box-geosite/internal/model"
+	"github.com/lazyaix-cto/sing-box-geosite/internal/model"
 )
 
 func init() { register(singbox{}) }

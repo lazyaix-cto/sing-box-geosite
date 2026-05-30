@@ -27,7 +27,11 @@ jobs:
       # In-process srs compilation — no sing-box binary needed (the version is
       # pinned via go.mod, not a downloaded .deb).
       - name: Generate rule sets
-        run: go run ./cmd/generator -config rules/sources.yaml -out rule
+        run: >
+          go run ./cmd/generator
+          -config rules/sources.yaml
+          -out rule
+          -base-url https://raw.githubusercontent.com/${{ github.repository }}/main/rule
 
       - name: Commit and push
         run: |

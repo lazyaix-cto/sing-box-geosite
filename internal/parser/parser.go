@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/lazyaix/sing-box-geosite/internal/model"
+	"github.com/lazyaix-cto/sing-box-geosite/internal/model"
 )
 
 // Result is what a Parser returns: the parsed rules plus a record of rule

@@ -14,7 +14,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lazyaix/sing-box-geosite/internal/source"
+	"github.com/lazyaix-cto/sing-box-geosite/internal/source"
 )
 
 const baseURL = "https://raw.githubusercontent.com/ipverse/asn-ip/master/as"

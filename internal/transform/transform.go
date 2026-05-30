@@ -7,7 +7,7 @@ package transform
 import (
 	"regexp"
 
-	"github.com/lazyaix/sing-box-geosite/internal/model"
+	"github.com/lazyaix-cto/sing-box-geosite/internal/model"
 )
 
 // Stats records what the passes changed, for transparent logging.

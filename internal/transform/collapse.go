@@ -3,7 +3,7 @@ package transform
 import (
 	"strings"
 
-	"github.com/lazyaix/sing-box-geosite/internal/model"
+	"github.com/lazyaix-cto/sing-box-geosite/internal/model"
 )
 
 // collapseByKeyword drops domain/domain_suffix entries that contain a

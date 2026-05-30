@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lazyaix/sing-box-geosite/internal/model"
+	"github.com/lazyaix-cto/sing-box-geosite/internal/model"
 )
 
 // TestLogicalCompiles drives a logical rule through JSON -> in-process srs ->

@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lazyaix/sing-box-geosite/internal/model"
+	"github.com/lazyaix-cto/sing-box-geosite/internal/model"
 )
 
 // applyClassical maps a single classical-style rule (`TYPE,value`) into the IR.
