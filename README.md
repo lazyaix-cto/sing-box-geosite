@@ -36,10 +36,11 @@
   （模板见 `rules/overrides/_example.yaml`）。
 - 并发抓取（`-concurrency`，默认 8），单源失败仅记 `[FAIL]`，不影响其余。
 - 无法表示的类型（`USER-AGENT`/`IP-ASN`/`HOST-WILDCARD` 等）计数并打印，绝不静默丢弃。
-- 单元测试覆盖各解析器、嗅探、各优化 pass、override、逻辑规则编译；CI（`go test` +
-  每日生成提交）见 `.github/workflows/build.yml`。
-- 后续：**IP-ASN 展开**（需 ASN→CIDR 数据源，在线 API 或离线 GeoLite2-ASN）尚未实现，
-  当前 `IP-ASN` 仍计数跳过。
+- **IP-ASN 展开**（`-resolve-asn`，默认关）：将 `IP-ASN` 规则经 ipverse/asn-ip 公共数据集
+  （免密钥、GitHub 托管）展开为 CIDR 并入 `ip_cidr`，带缓存；数据源可替换为在线 BGP API
+  或离线 GeoLite2-ASN。默认关以保持产物确定、不引第三方依赖；未解析的 ASN 计数不静默丢弃。
+- 单元测试覆盖各解析器、嗅探、各优化 pass、override、逻辑规则编译、ASN 解析；CI
+  （`go test` + 每日生成提交）见 `.github/workflows/build.yml`。
 
 ## 使用
 

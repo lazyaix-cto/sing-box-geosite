@@ -20,6 +20,9 @@ type RuleSet struct {
 	SourceIPCIDR  []string
 	Port          []uint16
 	Logical       []LogicalRule
+	// ASN holds raw IP-ASN values awaiting expansion to CIDRs; it is resolved
+	// and cleared before compilation (sing-box headless rules have no asn field).
+	ASN []string
 }
 
 // LogicalRule is an AND/OR combination of leaf rule sets, compiled to a
@@ -42,6 +45,7 @@ func (r *RuleSet) Merge(other *RuleSet) {
 	r.SourceIPCIDR = append(r.SourceIPCIDR, other.SourceIPCIDR...)
 	r.Port = append(r.Port, other.Port...)
 	r.Logical = append(r.Logical, other.Logical...)
+	r.ASN = append(r.ASN, other.ASN...)
 }
 
 // Normalize deduplicates and sorts every field so output is deterministic,
@@ -66,7 +70,7 @@ func (r *RuleSet) IsEmpty() bool {
 func (r *RuleSet) Count() int {
 	return len(r.Domain) + len(r.DomainSuffix) + len(r.DomainKeyword) +
 		len(r.DomainRegex) + len(r.IPCIDR) + len(r.SourceIPCIDR) + len(r.Port) +
-		len(r.Logical)
+		len(r.Logical) + len(r.ASN)
 }
 
 // MinVersion returns the minimum sing-box rule-set format version the content

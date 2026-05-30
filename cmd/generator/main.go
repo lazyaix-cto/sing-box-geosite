@@ -17,6 +17,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/lazyaix/sing-box-geosite/internal/asn"
 	"github.com/lazyaix/sing-box-geosite/internal/compile"
 	"github.com/lazyaix/sing-box-geosite/internal/config"
 	"github.com/lazyaix/sing-box-geosite/internal/model"
@@ -31,6 +32,7 @@ type options struct {
 	overridesDir string
 	srsVersions  string
 	optimize     bool
+	resolveASN   bool
 }
 
 func main() {
@@ -45,6 +47,7 @@ func main() {
 	flag.StringVar(&opt.srsVersions, "srs-versions", "auto",
 		"srs binary format versions: 'auto' (min required) or a comma list like '1,2,3'")
 	flag.BoolVar(&opt.optimize, "optimize", true, "apply dedup/collapse/cidr-merge passes")
+	flag.BoolVar(&opt.resolveASN, "resolve-asn", false, "expand IP-ASN rules to CIDRs via the ipverse/asn-ip dataset")
 	flag.IntVar(&concurrency, "concurrency", 8, "max concurrent sources")
 	flag.Parse()
 
@@ -71,13 +74,18 @@ func run(configPath string, opt options, concurrency int) error {
 	ctx := context.Background()
 	outcomes := make([]outcome, len(cfg.Sources))
 
+	var resolver *asn.Resolver
+	if opt.resolveASN {
+		resolver = asn.NewResolver()
+	}
+
 	var g errgroup.Group
 	if concurrency > 0 {
 		g.SetLimit(concurrency)
 	}
 	for i, src := range cfg.Sources {
 		g.Go(func() error {
-			count, err := build(ctx, src, opt)
+			count, err := build(ctx, src, opt, resolver)
 			// Capture per-source; return nil so one failure never cancels siblings.
 			outcomes[i] = outcome{src.Category, count, err}
 			return nil
@@ -102,7 +110,7 @@ func run(configPath string, opt options, concurrency int) error {
 	return nil
 }
 
-func build(ctx context.Context, src config.Source, opt options) (int, error) {
+func build(ctx context.Context, src config.Source, opt options, resolver *asn.Resolver) (int, error) {
 	merged := &model.RuleSet{}
 	skipped := map[string]int{}
 	var detected string
@@ -130,6 +138,8 @@ func build(ctx context.Context, src config.Source, opt options) (int, error) {
 			skipped[k] += v
 		}
 	}
+
+	expandASN(ctx, merged, resolver, skipped)
 
 	ov, err := override.Load(opt.overridesDir, src.Category)
 	if err != nil {
@@ -169,6 +179,34 @@ func build(ctx context.Context, src config.Source, opt options) (int, error) {
 
 	logResult(src.Category, merged.Count(), detected, ov != nil, st, skipped, versions, below)
 	return merged.Count(), nil
+}
+
+// expandASN resolves collected IP-ASN values to CIDRs (appending to IPCIDR)
+// when a resolver is configured, then clears them. Without a resolver, or for
+// ASNs that fail to resolve, the count is recorded in skipped so the drop is
+// never silent. Resolution does not fail the category.
+func expandASN(ctx context.Context, rs *model.RuleSet, resolver *asn.Resolver, skipped map[string]int) {
+	if len(rs.ASN) == 0 {
+		return
+	}
+	uniq := map[string]bool{}
+	for _, a := range rs.ASN {
+		uniq[a] = true
+	}
+	if resolver == nil {
+		skipped["IP-ASN"] += len(uniq)
+		rs.ASN = nil
+		return
+	}
+	for a := range uniq {
+		cidrs, err := resolver.Resolve(ctx, a)
+		if err != nil {
+			skipped["IP-ASN(unresolved)"]++
+			continue
+		}
+		rs.IPCIDR = append(rs.IPCIDR, cidrs...)
+	}
+	rs.ASN = nil
 }
 
 // parseVersions resolves the -srs-versions flag against the minimum version the

@@ -31,8 +31,11 @@ func applyClassical(rs *model.RuleSet, typ, val string) bool {
 			return false
 		}
 		rs.Port = append(rs.Port, uint16(p))
+	case "IP-ASN":
+		// Collected for later expansion to CIDRs (see internal/asn).
+		rs.ASN = append(rs.ASN, val)
 	default:
-		// IP-ASN, GEOIP, USER-AGENT, URL-REGEX, AND/OR, PROCESS-NAME, ...
+		// GEOIP, USER-AGENT, URL-REGEX, AND/OR, PROCESS-NAME, ...
 		return false
 	}
 	return true

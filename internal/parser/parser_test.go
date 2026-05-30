@@ -39,8 +39,11 @@ IP-ASN,123,Policy
 	if !reflect.DeepEqual(rs.IPCIDR, []string{"1.2.3.0/24"}) {
 		t.Errorf("IPCIDR = %v", rs.IPCIDR)
 	}
-	if res.Skipped["IP-ASN"] != 1 {
-		t.Errorf("Skipped = %v, want IP-ASN x1", res.Skipped)
+	if !reflect.DeepEqual(rs.ASN, []string{"123"}) {
+		t.Errorf("ASN = %v, want [123]", rs.ASN)
+	}
+	if len(res.Skipped) != 0 {
+		t.Errorf("Skipped = %v, want empty", res.Skipped)
 	}
 }
 
