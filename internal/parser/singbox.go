@@ -9,14 +9,14 @@ import (
 func init() { register(singbox{}) }
 
 // singbox parses a native sing-box rule-set in source format, letting us
-// re-aggregate existing rule sets. Logical rules are counted as skipped (P2
-// will preserve them) rather than flattened into wrong semantics.
+// re-aggregate existing rule sets. Logical rules are preserved into the IR.
 type singbox struct{}
 
 func (singbox) Name() string { return "singbox" }
 
 type sbRule struct {
 	Type          string   `json:"type"`
+	Mode          string   `json:"mode"`
 	Domain        []string `json:"domain"`
 	DomainSuffix  []string `json:"domain_suffix"`
 	DomainKeyword []string `json:"domain_keyword"`
@@ -41,16 +41,31 @@ func (singbox) Parse(content []byte) (*Result, error) {
 	skipped := map[string]int{}
 	for _, r := range doc.Rules {
 		if r.Type == "logical" || len(r.Rules) > 0 {
-			skipped["logical"]++
+			lr := model.LogicalRule{Mode: r.Mode}
+			for _, nr := range r.Rules {
+				lr.Rules = append(lr.Rules, leafToRuleSet(nr))
+			}
+			if len(lr.Rules) > 0 {
+				rs.Logical = append(rs.Logical, lr)
+			} else {
+				skipped["logical"]++
+			}
 			continue
 		}
-		rs.Domain = append(rs.Domain, r.Domain...)
-		rs.DomainSuffix = append(rs.DomainSuffix, r.DomainSuffix...)
-		rs.DomainKeyword = append(rs.DomainKeyword, r.DomainKeyword...)
-		rs.DomainRegex = append(rs.DomainRegex, r.DomainRegex...)
-		rs.IPCIDR = append(rs.IPCIDR, r.IPCIDR...)
-		rs.SourceIPCIDR = append(rs.SourceIPCIDR, r.SourceIPCIDR...)
-		rs.Port = append(rs.Port, r.Port...)
+		leaf := leafToRuleSet(r)
+		rs.Merge(leaf)
 	}
 	return &Result{RuleSet: rs, Skipped: skipped}, nil
+}
+
+func leafToRuleSet(r sbRule) *model.RuleSet {
+	return &model.RuleSet{
+		Domain:        r.Domain,
+		DomainSuffix:  r.DomainSuffix,
+		DomainKeyword: r.DomainKeyword,
+		DomainRegex:   r.DomainRegex,
+		IPCIDR:        r.IPCIDR,
+		SourceIPCIDR:  r.SourceIPCIDR,
+		Port:          r.Port,
+	}
 }

@@ -3,6 +3,7 @@ package parser
 import (
 	"bufio"
 	"bytes"
+	"net/netip"
 	"strings"
 )
 
@@ -22,9 +23,54 @@ func Detect(content []byte, url string) string {
 		return "clash"
 	case firstRuleLineIsClassical(content):
 		return "quantumultx"
+	case looksLikeAdGuard(sample):
+		return "adguard"
+	case looksLikeHosts(content):
+		return "hosts"
 	default:
 		return "domainlist"
 	}
+}
+
+func looksLikeAdGuard(sample string) bool {
+	if strings.Contains(sample, "[Adblock") {
+		return true
+	}
+	for _, line := range strings.Split(sample, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "||") || strings.HasPrefix(line, "@@||") {
+			return true
+		}
+	}
+	return false
+}
+
+func looksLikeHosts(content []byte) bool {
+	line := firstMeaningfulLine(content)
+	if strings.HasPrefix(line, "address=/") || strings.HasPrefix(line, "server=/") {
+		return true
+	}
+	fields := strings.Fields(line)
+	if len(fields) >= 2 {
+		if _, err := netip.ParseAddr(fields[0]); err == nil {
+			return true
+		}
+	}
+	return false
+}
+
+func firstMeaningfulLine(content []byte) string {
+	sc := bufio.NewScanner(bytes.NewReader(content))
+	sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if line == "" || strings.HasPrefix(line, "#") ||
+			strings.HasPrefix(line, "!") || strings.HasPrefix(line, ";") {
+			continue
+		}
+		return line
+	}
+	return ""
 }
 
 func leadingSample(content []byte, n int) string {

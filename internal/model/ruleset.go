@@ -19,6 +19,14 @@ type RuleSet struct {
 	IPCIDR        []string
 	SourceIPCIDR  []string
 	Port          []uint16
+	Logical       []LogicalRule
+}
+
+// LogicalRule is an AND/OR combination of leaf rule sets, compiled to a
+// sing-box logical headless rule. Each sub-rule uses only its leaf fields.
+type LogicalRule struct {
+	Mode  string // "and" or "or"
+	Rules []*RuleSet
 }
 
 // Merge appends another rule set's entries into r.
@@ -33,6 +41,7 @@ func (r *RuleSet) Merge(other *RuleSet) {
 	r.IPCIDR = append(r.IPCIDR, other.IPCIDR...)
 	r.SourceIPCIDR = append(r.SourceIPCIDR, other.SourceIPCIDR...)
 	r.Port = append(r.Port, other.Port...)
+	r.Logical = append(r.Logical, other.Logical...)
 }
 
 // Normalize deduplicates and sorts every field so output is deterministic,
@@ -56,7 +65,17 @@ func (r *RuleSet) IsEmpty() bool {
 // Count returns the total number of entries across all fields.
 func (r *RuleSet) Count() int {
 	return len(r.Domain) + len(r.DomainSuffix) + len(r.DomainKeyword) +
-		len(r.DomainRegex) + len(r.IPCIDR) + len(r.SourceIPCIDR) + len(r.Port)
+		len(r.DomainRegex) + len(r.IPCIDR) + len(r.SourceIPCIDR) + len(r.Port) +
+		len(r.Logical)
+}
+
+// MinVersion returns the minimum sing-box rule-set format version the content
+// requires. Everything we currently emit (domain/suffix/keyword/regex/ip_cidr/
+// source_ip_cidr/port/logical) exists in v1; v2 is only needed for AdGuard rule
+// items and v3 for network_type/wifi, neither of which we produce. Kept as a
+// method so it stays correct when such fields are added later.
+func (r *RuleSet) MinVersion() uint8 {
+	return 1
 }
 
 func dedupSortStrings(in []string) []string {

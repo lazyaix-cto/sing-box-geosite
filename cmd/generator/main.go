@@ -12,6 +12,8 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
 
 	"golang.org/x/sync/errgroup"
 
@@ -27,7 +29,7 @@ import (
 type options struct {
 	outDir       string
 	overridesDir string
-	srsVersion   uint8
+	srsVersions  string
 	optimize     bool
 }
 
@@ -35,17 +37,16 @@ func main() {
 	var (
 		configPath  string
 		opt         options
-		srsVersion  uint
 		concurrency int
 	)
 	flag.StringVar(&configPath, "config", "rules/sources.yaml", "path to sources config")
 	flag.StringVar(&opt.outDir, "out", "rule", "output directory")
 	flag.StringVar(&opt.overridesDir, "overrides", "rules/overrides", "per-category override directory")
-	flag.UintVar(&srsVersion, "srs-version", 1, "srs binary format version (1, 2 or 3)")
+	flag.StringVar(&opt.srsVersions, "srs-versions", "auto",
+		"srs binary format versions: 'auto' (min required) or a comma list like '1,2,3'")
 	flag.BoolVar(&opt.optimize, "optimize", true, "apply dedup/collapse/cidr-merge passes")
 	flag.IntVar(&concurrency, "concurrency", 8, "max concurrent sources")
 	flag.Parse()
-	opt.srsVersion = uint8(srsVersion)
 
 	if err := run(configPath, opt, concurrency); err != nil {
 		log.Fatalf("fatal: %v", err)
@@ -145,7 +146,8 @@ func build(ctx context.Context, src config.Source, opt options) (int, error) {
 		merged.Normalize()
 	}
 
-	jsonBytes, err := compile.JSON(merged, opt.srsVersion)
+	minVer := merged.MinVersion()
+	jsonBytes, err := compile.JSON(merged, minVer)
 	if err != nil {
 		return 0, fmt.Errorf("render json: %w", err)
 	}
@@ -153,22 +155,67 @@ func build(ctx context.Context, src config.Source, opt options) (int, error) {
 	if err := os.WriteFile(jsonPath, append(jsonBytes, '\n'), 0o644); err != nil {
 		return 0, err
 	}
-	srsPath := filepath.Join(opt.outDir, src.Category+".srs")
-	if err := compile.SRS(jsonBytes, srsPath, opt.srsVersion); err != nil {
-		return 0, fmt.Errorf("compile srs: %w", err)
+
+	versions, below := parseVersions(opt.srsVersions, minVer)
+	for idx, v := range versions {
+		srsPath := filepath.Join(opt.outDir, src.Category+".srs")
+		if idx > 0 {
+			srsPath = filepath.Join(opt.outDir, fmt.Sprintf("%s.v%d.srs", src.Category, v))
+		}
+		if err := compile.SRS(jsonBytes, srsPath, v); err != nil {
+			return 0, fmt.Errorf("compile srs v%d: %w", v, err)
+		}
 	}
 
-	logResult(src.Category, merged.Count(), detected, ov != nil, st, skipped)
+	logResult(src.Category, merged.Count(), detected, ov != nil, st, skipped, versions, below)
 	return merged.Count(), nil
 }
 
-func logResult(category string, count int, detected string, overridden bool, st transform.Stats, skipped map[string]int) {
+// parseVersions resolves the -srs-versions flag against the minimum version the
+// content requires. "auto"/"" -> [min]. Requested versions below min are
+// reported (returned in below) and skipped.
+func parseVersions(spec string, min uint8) (use, below []uint8) {
+	spec = strings.TrimSpace(spec)
+	if spec == "" || spec == "auto" {
+		return []uint8{min}, nil
+	}
+	seen := map[uint8]bool{}
+	for _, part := range strings.Split(spec, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		n, err := strconv.Atoi(part)
+		if err != nil || n < 1 || n > 255 {
+			continue
+		}
+		v := uint8(n)
+		if v < min {
+			below = append(below, v)
+			continue
+		}
+		if !seen[v] {
+			seen[v] = true
+			use = append(use, v)
+		}
+	}
+	if len(use) == 0 {
+		use = []uint8{min}
+	}
+	sort.Slice(use, func(i, j int) bool { return use[i] < use[j] })
+	return use, below
+}
+
+func logResult(category string, count int, detected string, overridden bool, st transform.Stats, skipped map[string]int, versions, below []uint8) {
 	note := ""
 	if detected != "" {
 		note += " (auto:" + detected + ")"
 	}
 	if overridden {
 		note += " (override)"
+	}
+	if len(versions) > 1 {
+		note += fmt.Sprintf(" (srs v%v)", versions)
 	}
 	if count == 0 {
 		log.Printf("[WARN] %-12s produced 0 entries%s", category, note)
@@ -178,6 +225,9 @@ func logResult(category string, count int, detected string, overridden bool, st 
 	if st.Changed() {
 		log.Printf("        %-12s optimized: -kw %d, -suffix %d, cidr %d->%d, -regex %d",
 			category, st.KeywordCollapsed, st.SuffixCollapsed, st.CIDRBefore, st.CIDRAfter, st.RegexDropped)
+	}
+	if len(below) > 0 {
+		log.Printf("        %-12s skipped srs versions below min: %v", category, below)
 	}
 	if len(skipped) > 0 {
 		log.Printf("        %-12s skipped %v", category, sortedSkip(skipped))

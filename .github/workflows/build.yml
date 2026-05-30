@@ -21,6 +21,9 @@ jobs:
         with:
           go-version: stable
 
+      - name: Test
+        run: go test ./...
+
       # In-process srs compilation — no sing-box binary needed (the version is
       # pinned via go.mod, not a downloaded .deb).
       - name: Generate rule sets
