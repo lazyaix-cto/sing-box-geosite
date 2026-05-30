@@ -13,18 +13,26 @@
   绝不悄悄丢弃。
 - **产物可校验** —— 每个 `.srs` 编译后立即用 `srs.Read` 回读校验，确保真实 sing-box 可加载。
 
-## 状态：P1（对齐并超越原版）
+## 状态：P2（质量层）
 
-端到端跑通全部 18 个分类：并发抓取 → 自动嗅探格式 → 解析 → 归一化 → 输出
-`.json` + `.srs` → 回读校验。逐源报错不中断其余分类。
+管线：并发抓取 → 自动嗅探 → 解析 → **override 定制** → **优化**（去重/正则校验/
+关键字收敛/后缀收敛/CIDR 聚合）→ 输出 `.json` + `.srs` → 回读校验。
 
 - 已支持格式：`quantumultx`（QuantumultX / Clash classical）、`clash`（rule-provider
   payload）、`singbox`（原生 rule-set 源格式）、`domainlist`（纯域名 / v2fly dlc 前缀）；
   `format` 留空即按内容 + URL 后缀自动嗅探。
+- **优化（`-optimize`，默认开）**——均为行为保持的安全收敛：
+  - 关键字收敛：含某 `domain_keyword` 子串的 domain/suffix 必然也命中该 keyword，可删；
+  - 后缀收敛：被更短 `domain_suffix` 覆盖的 domain/子 suffix（标签对齐）可删；
+  - CIDR 聚合：`netipx` 合并重叠/相邻前缀，非法项丢弃并计数；
+  - 非法正则丢弃，避免单条坏 regex 拖垮整个分类。
+  - 实测：OpenAI 34→26、Global 35002→26271、Microsoft 708→521、China CIDR 21→15。
+- **定制**：`rules/overrides/<Category>.yaml` 的 `add` / `exclude` 增删条目
+  （模板见 `rules/overrides/_example.yaml`）。
 - 并发抓取（`-concurrency`，默认 8），单源失败仅记 `[FAIL]`，不影响其余。
 - 无法表示的类型（`USER-AGENT`/`IP-ASN`/`HOST-WILDCARD` 等）计数并打印，绝不静默丢弃。
-- 路线图：P2 去重/后缀收敛/CIDR 合并/override 定制 + 单元测试；
-  P3 AdGuard/hosts/IP-ASN 解析器 + 多版本（v1/v2/v3）输出 + CI 上线。
+- 单元测试覆盖各解析器、嗅探、各优化 pass、override。
+- 路线图：P3 AdGuard/hosts/IP-ASN 解析器 + 多版本（v1/v2/v3）输出 + CI 上线。
 
 ## 使用
 

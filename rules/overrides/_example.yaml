@@ -1,0 +1,15 @@
+# Per-category override template.
+#
+# Copy this to <Category>.yaml (e.g. OpenAI.yaml) to customize that category.
+# `add` entries are merged in; `exclude` entries are removed by exact match.
+# This file (_example) matches no category, so it is never applied.
+add:
+  domain_suffix:
+    - my-llm-proxy.example
+  domain:
+    - exact.example.com
+exclude:
+  domain_suffix:
+    - unwanted.example   # e.g. a false positive you don't want routed here
+  domain_keyword:
+    - tracker
