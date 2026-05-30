@@ -1,0 +1,8 @@
+# Source definitions — the declarative replacement for the original links.txt.
+# Each entry produces rule/<category>.json and rule/<category>.srs, merging all
+# listed URLs. P0 ships one category end-to-end; P1 restores the full set.
+sources:
+  - category: OpenAI
+    format: quantumultx
+    urls:
+      - https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/QuantumultX/OpenAI/OpenAI.list
